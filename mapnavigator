@@ -1,0 +1,93 @@
+#include <iostream>
+#include <vector>
+#include <unordered_map>
+#include <set>
+#include <climits>
+#include <queue>
+#include <utility>
+
+class Graph {
+public:
+    void addNode(int node) {
+        nodes.insert(node);
+        edges[node] = std::vector<std::pair<int, int>>();
+    }
+
+    void addEdge(int fromNode, int toNode, int distance) {
+        edges[fromNode].push_back({toNode, distance});
+        edges[toNode].push_back({fromNode, distance});
+    }
+
+    const std::set<int>& getNodes() const {
+        return nodes;
+    }
+
+    const std::vector<std::pair<int, int>>& getEdges(int node) const {
+        return edges.at(node);
+    }
+
+private:
+    std::set<int> nodes;
+    std::unordered_map<int, std::vector<std::pair<int, int>>> edges;
+};
+
+std::unordered_map<int, int> dijkstra(const Graph& graph, int startNode) {
+    std::unordered_map<int, int> distances;
+    for (int node : graph.getNodes()) {
+        distances[node] = INT_MAX;
+    }
+    distances[startNode] = 0;
+
+    using NodeDistancePair = std::pair<int, int>;
+    auto compare = [](NodeDistancePair left, NodeDistancePair right) { return left.second > right.second; };
+    std::priority_queue<NodeDistancePair, std::vector<NodeDistancePair>, decltype(compare)> pq(compare);
+
+    pq.push({startNode, 0});
+
+    while (!pq.empty()) {
+        int currentNode = pq.top().first;
+        int currentDistance = pq.top().second;
+        pq.pop();
+
+        if (currentDistance > distances[currentNode]) {
+            continue;
+        }
+
+        for (const auto& edge : graph.getEdges(currentNode)) {
+            int neighbor = edge.first;
+            int distance = edge.second;
+            int newDistance = currentDistance + distance;
+
+            if (newDistance < distances[neighbor]) {
+                distances[neighbor] = newDistance;
+                pq.push({neighbor, newDistance});
+            }
+        }
+    }
+
+    return distances;
+}
+
+int main() {
+    Graph graph;
+    graph.addNode(1);
+    graph.addNode(2);
+    graph.addNode(3);
+    graph.addNode(4);
+    
+    graph.addEdge(1, 2, 1);
+    graph.addEdge(1, 3, 4);
+    graph.addEdge(2, 3, 2);
+    graph.addEdge(2, 4, 5);
+    graph.addEdge(3, 4, 1);
+
+    int startNode = 1;
+    std::unordered_map<int, int> distances = dijkstra(graph, startNode);
+
+    std::cout << "Distances from node " << startNode << ":\n";
+    for (const auto& pair : distances) {
+        std::cout << "Node " << pair.first << ": " << pair.second << "\n";
+    }
+
+    return 0;
+}
